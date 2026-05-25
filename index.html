@@ -193,6 +193,26 @@
   .btn-danger { background:var(--danger); color:white; }
   .backup-banner { display:flex; align-items:center; gap:0.7rem; background:linear-gradient(135deg,rgba(240,192,96,0.12),rgba(240,192,96,0.05)); border:1px solid rgba(240,192,96,0.35); border-radius:12px; padding:0.85rem 1rem; margin-bottom:1rem; }
   .btn-sm { padding:0.45rem 0.85rem; font-size:0.78rem; }
+  /* Per-set half/assisted indicator buttons */
+  .set-row { grid-template-columns: 24px 1fr 1fr 28px 28px 28px; }
+  .set-mod-btn { width:24px; height:24px; border-radius:6px; background:var(--surface); border:1px solid var(--border); color:var(--muted); font-size:0.62rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; transition:all 0.15s; }
+  .set-mod-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+  .set-mod-btn.assisted.active { background:var(--accent2); border-color:var(--accent2); }
+  .set-headers { grid-template-columns: 24px 1fr 1fr 28px 28px 28px; }
+  /* Progression recommendation card */
+  .progression-rec { background:linear-gradient(135deg, rgba(155,111,212,0.12), rgba(212,99,154,0.06)); border:1px solid rgba(155,111,212,0.3); border-radius:10px; padding:0.7rem 0.85rem; margin:0.6rem 0; font-size:0.78rem; line-height:1.4; }
+  .progression-rec strong { color:var(--accent); }
+  /* Grading help button */
+  .help-btn { background:none; border:1px solid var(--border); color:var(--muted); width:22px; height:22px; border-radius:50%; font-size:0.72rem; cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center; margin-left:0.4rem; }
+  .help-btn:hover { color:var(--text); }
+  .grade-row { display:flex; align-items:center; gap:0.8rem; padding:0.55rem 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .grade-row:last-child { border:none; }
+  .grade-row .rank-badge { min-width:30px; flex-shrink:0; }
+  /* Per-set instruction line */
+  .set-instruction { display:flex; justify-content:space-between; align-items:center; padding:0.45rem 0.5rem 0.25rem; font-size:0.72rem; color:var(--muted); }
+  .set-instr-num { text-transform:uppercase; letter-spacing:0.08em; font-weight:600; color:var(--accent); }
+  .set-instr-tgt { color:var(--text); }
+  .set-instr-tgt strong { color:var(--accent); font-weight:700; }
 </style>
 </head>
 <body>
@@ -218,7 +238,7 @@
   <div class="s-alert" id="s-alert"><div class="s-alert-title">👑 S CLASS UNLOCKED</div><div id="s-alert-text"></div></div>
   <div class="session-rank-card">
     <div>
-      <div class="session-rank-label">Session Rank</div>
+      <div class="session-rank-label">Session Rank <button class="help-btn" onclick="openModal('grading-modal')" title="Explain grading">?</button></div>
       <div class="session-rank-val" id="session-rank-val" style="color:var(--muted)">—</div>
       <div class="session-rank-sub" id="session-rank-sub">Complete sets to rank up</div>
     </div>
@@ -331,6 +351,11 @@
       </div>
       <label>What did you eat?</label>
       <textarea id="meal-desc" rows="2" placeholder="e.g. Double gainer shake, keema macaroni..."></textarea>
+      <div id="meal-photo-preview" style="display:none;margin-top:0.5rem;position:relative;">
+        <img id="meal-photo-img" style="max-width:100%;max-height:160px;border-radius:8px;display:block;">
+        <button onclick="clearMealPhoto()" style="position:absolute;top:0.4rem;right:0.4rem;background:rgba(0,0,0,0.7);border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:1rem;cursor:pointer;">×</button>
+      </div>
+      <input type="file" id="meal-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleMealPhoto(event)">
       <div class="ai-loading" id="ai-loading"><div class="dot-pulse"><span></span><span></span><span></span></div><span>Estimating...</span></div>
       <div id="meal-estimate" style="display:none;margin-top:0.6rem;">
         <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
@@ -340,8 +365,9 @@
         <input type="text" id="meal-name-input" placeholder="Meal name" style="margin-bottom:0.5rem;">
       </div>
       <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+        <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('meal-photo-input').click()">📷 Photo</button>
         <button class="btn btn-secondary" style="flex:1" onclick="estimateMeal()">✨ Estimate</button>
-        <button class="btn btn-primary" style="flex:1" onclick="logMeal()">Log Meal</button>
+        <button class="btn btn-primary" style="flex:1.2" onclick="logMeal()">Log Meal</button>
       </div>
     </div>
   </div>
@@ -396,6 +422,7 @@
     <canvas id="kcal-chart" height="130"></canvas>
   </div>
   <div class="chart-card"><div class="chart-title">Protein</div><canvas id="protein-chart" height="130"></canvas></div>
+  <div class="card"><div class="card-header"><span class="card-title">This Week's Volume by Muscle</span><span style="font-size:0.7rem;color:var(--muted)" id="muscle-vol-period">Last 7 days</span></div><div class="card-body" id="muscle-volume-list"><div class="empty-state">Log workouts to see volume</div></div></div>
   <div class="card"><div class="card-header"><span class="card-title">Exercise Rankings</span></div><div class="card-body" id="rankings-list"><div class="empty-state">Log workouts to build rankings</div></div></div>
   <div class="card"><div class="card-header"><span class="card-title">Session History</span></div><div class="card-body" id="session-history"><div class="empty-state">No sessions yet</div></div></div>
 
@@ -462,6 +489,39 @@
   </div>
 </div></div>
 
+<div class="modal-overlay" id="grading-modal"><div class="modal">
+  <div class="modal-header"><span class="modal-title">How Grading Works</span><button class="modal-close" onclick="closeModal('grading-modal')">✕</button></div>
+  <div class="modal-body">
+    <p style="font-size:0.85rem;line-height:1.5;color:var(--muted);margin-bottom:1rem;">Each exercise gets a rank based on how close your reps were to the top of your rep range. Your session rank is the average across all completed exercises.</p>
+    <h4 style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;">Per-Exercise Grades</h4>
+    <div class="grade-row"><span class="rank-badge rank-S">S</span><div><strong>All sets at max reps.</strong> Top of your rep range hit on every set. Time to add weight (clean S only).</div></div>
+    <div class="grade-row"><span class="rank-badge rank-A">A</span><div><strong>All but one set at max.</strong> One set fell short. Push that last set up next time.</div></div>
+    <div class="grade-row"><span class="rank-badge rank-B">B</span><div><strong>Average reps ≥ 85% of max.</strong> Solid working session, close to A.</div></div>
+    <div class="grade-row"><span class="rank-badge rank-C">C</span><div><strong>Average reps ≥ 60% of max.</strong> You hit the work but you're at the bottom of the range. Push reps up.</div></div>
+    <div class="grade-row"><span class="rank-badge rank-D">D</span><div><strong>Below 60% or sets skipped.</strong> Weight likely too heavy, or you didn't complete the work.</div></div>
+    <h4 style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;">Half &amp; Assisted Reps</h4>
+    <p style="font-size:0.82rem;line-height:1.5;color:var(--muted);">Reps flagged as <strong style="color:var(--accent)">½</strong> (partial range) or <strong style="color:var(--accent2)">A</strong> (assisted) count at <strong>50%</strong>. e.g. 8 reps with ½ flag = 4 toward grading.</p>
+    <h4 style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;">Session Rank</h4>
+    <p style="font-size:0.82rem;line-height:1.5;color:var(--muted);">Average of every completed exercise's rank, rounded. Skipping exercises lowers it. Hit <strong style="color:var(--accent)">S</strong> across the board → 👑</p>
+    <h4 style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;">When Weight Goes Up</h4>
+    <p style="font-size:0.82rem;line-height:1.5;color:var(--muted);"><strong>Compounds</strong> (bench, squat, OHP, etc): need <strong>two clean S's in a row</strong> before bumping.<br><strong>Isolation</strong> work: <strong>one clean S</strong> = bump immediately.<br>"Clean" means no half or assisted reps in that session.</p>
+  </div>
+</div></div>
+
+<div class="modal-overlay" id="rest-modal"><div class="modal" style="text-align:center;">
+  <div class="modal-header" style="justify-content:center;"><span class="modal-title">Rest Timer</span></div>
+  <div class="modal-body">
+    <div id="rest-display" style="font-family:'Bebas Neue',sans-serif;font-size:5rem;line-height:1;color:var(--accent);margin:0.5rem 0;">1:30</div>
+    <div id="rest-label" style="font-size:0.8rem;color:var(--muted);margin-bottom:1.2rem;">Recover for next set</div>
+    <div style="display:flex;gap:0.5rem;justify-content:center;margin-bottom:0.8rem;">
+      <button class="btn btn-secondary btn-sm" onclick="adjustRest(-15)">-15s</button>
+      <button class="btn btn-secondary btn-sm" onclick="adjustRest(15)">+15s</button>
+      <button class="btn btn-secondary btn-sm" onclick="adjustRest(30)">+30s</button>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="closeRestTimer()">Skip / Done</button>
+  </div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -490,11 +550,11 @@ const ROTATION = ['Push','Pull','Lower','Arms'];
 const MUSCLES = ['Chest','Front Delts','Side Delts','Rear Delts','Triceps','Biceps','Forearms','Lats','Upper Back','Traps','Lower Back','Abs','Glutes','Quads','Hamstrings','Calves'];
 
 const PELVIC_ROUTINE = [
-  { name: 'Deep Squat Hold', time: '60 seconds', desc: 'Feet shoulder width, squat as low as possible, heels flat. Breathe deeply into belly.' },
-  { name: 'Hip Flexor Stretch', time: '60 seconds each side', desc: 'Lunge position, back knee down, push hips forward. Hold something for balance.' },
-  { name: 'Happy Baby Pose', time: '90 seconds', desc: 'Lie on back, grab outside of feet, knees wide toward armpits, rock gently side to side.' },
-  { name: "Child's Pose", time: '60 seconds', desc: 'Knees wide, sit back toward heels, arms forward, breathe into lower back.' },
-  { name: 'Deep Belly Breathing', time: '2 minutes', desc: 'Breathe deep into pelvis, feel pelvic floor drop and expand on inhale, fully relax on exhale.' }
+  { name: 'Deep Squat Hold', time: '60 seconds', seconds: 60, desc: 'Feet shoulder width, squat as low as possible, heels flat. Breathe deeply into belly.' },
+  { name: 'Hip Flexor Stretch', time: '60 seconds each side', seconds: 60, sides: 2, desc: 'Lunge position, back knee down, push hips forward. Hold something for balance.' },
+  { name: 'Happy Baby Pose', time: '90 seconds', seconds: 90, desc: 'Lie on back, grab outside of feet, knees wide toward armpits, rock gently side to side.' },
+  { name: "Child's Pose", time: '60 seconds', seconds: 60, desc: 'Knees wide, sit back toward heels, arms forward, breathe into lower back.' },
+  { name: 'Deep Belly Breathing', time: '2 minutes', seconds: 120, desc: 'Breathe deep into pelvis, feel pelvic floor drop and expand on inhale, fully relax on exhale.' }
 ];
 
 const WORKOUT_DAYS = {
@@ -582,6 +642,10 @@ function closeModal(id) {
   document.getElementById(id).classList.remove('show');
 }
 
+function openModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+
 function saveApiKey() {
   const key = document.getElementById('api-key-input').value.trim();
   if (!key) return showToast('Enter an API key');
@@ -609,12 +673,20 @@ function renderNextUp() {
 function calcExerciseRank(exName, sets, maxReps) {
   if (!sets || !sets.filter(s => s && s.done).length) return 'D';
   const done = sets.filter(s => s && s.done);
-  if (!done.some(s => (s.reps || 0) > 0)) return 'D';
-  const allMax = done.every(s => (s.reps || 0) >= maxReps);
-  const avg = done.reduce((a, s) => a + (s.reps || 0), 0) / done.length;
+  // Effective reps = full reps + half reps × 0.5 (half AND assisted both count as 0.5)
+  // Note: rep input is total — half/assisted are flags. We treat their count as the rep input,
+  // but the count contributes at 50% weight to grading.
+  const effReps = (s) => {
+    const r = s.reps || 0;
+    if (s.half || s.assisted) return r * 0.5;
+    return r;
+  };
+  if (!done.some(s => effReps(s) > 0)) return 'D';
+  const allMax = done.every(s => effReps(s) >= maxReps);
+  const avg = done.reduce((a, s) => a + effReps(s), 0) / done.length;
   const hr = avg / maxReps;
   if (allMax) return 'S';
-  const setsShortOfMax = done.filter(s => (s.reps || 0) < maxReps).length;
+  const setsShortOfMax = done.filter(s => effReps(s) < maxReps).length;
   if (setsShortOfMax === 1 && done.length >= 2) return 'A';
   if (hr >= 0.85) return 'B';
   if (hr >= 0.6) return 'C';
@@ -800,13 +872,21 @@ function renderWorkout() {
     const exData = currentWorkoutData[ex.name] || {};
     const doneCount = (exData.sets || []).filter(s => s && s.done).length;
     const rank = doneCount > 0 ? calcExerciseRank(ex.name, exData.sets || [], ex.maxReps) : null;
+    const planInfo = buildSetPlan(ex);
+    const plan = planInfo.plan;
     const sets = Array.from({ length: ex.sets }, (_, si) => {
       const sd = (exData.sets || [])[si] || {};
-      const ph = ex.weight > 0 ? ex.weight : 'kg';
-      return `<div class="set-row">
+      const planSet = plan[si] || { weight: ex.weight, repTarget: ex.minReps, label: '' };
+      const wPh = planSet.weight > 0 ? planSet.weight : 'kg';
+      const rPh = planSet.repTarget;
+      // Per-set instruction line above the row
+      const setInstruction = `<div class="set-instruction"><span class="set-instr-num">Set ${si + 1}${planSet.label ? ' · ' + planSet.label : ''}<\/span><span class="set-instr-tgt"><strong>${planSet.weight}kg<\/strong> → aim for <strong>${planSet.repTarget}<\/strong> reps<\/span><\/div>`;
+      return setInstruction + `<div class="set-row">
         <span class="set-num">${si + 1}<\/span>
-        <input class="set-input" type="number" placeholder="${ph}" value="${sd.weight || ''}" oninput="updateSet('${safeKey(ex.name)}',${si},'weight',this.value)" step="0.5">
-        <input class="set-input" type="number" placeholder="${ex.repRange}" value="${sd.reps || ''}" oninput="updateSet('${safeKey(ex.name)}',${si},'reps',this.value)">
+        <input class="set-input" type="number" placeholder="${wPh}" value="${sd.weight || ''}" oninput="updateSet('${safeKey(ex.name)}',${si},'weight',this.value)" step="0.5">
+        <input class="set-input" type="number" placeholder="${rPh}" value="${sd.reps || ''}" oninput="updateSet('${safeKey(ex.name)}',${si},'reps',this.value)">
+        <button class="set-mod-btn ${sd.half ? 'active' : ''}" onclick="toggleSetMod('${safeKey(ex.name)}',${si},'half',this)" title="Half reps (count as 0.5 each)">½<\/button>
+        <button class="set-mod-btn assisted ${sd.assisted ? 'active' : ''}" onclick="toggleSetMod('${safeKey(ex.name)}',${si},'assisted',this)" title="Assisted reps (count as 0.5 each)">A<\/button>
         <div class="set-complete ${sd.done ? 'done' : ''}" onclick="toggleSet('${safeKey(ex.name)}',${si},this)">${sd.done ? '✓' : ''}<\/div>
       <\/div>`;
     }).join('');
@@ -834,10 +914,13 @@ function renderWorkout() {
           <\/div>
         <\/div>
         <div class="coach-cue">💬 ${ex.cue}<\/div>
+        <div class="progression-rec">${planInfo.message}<\/div>
         <div class="set-headers">
           <span><\/span>
           <span class="set-hdr">Weight<\/span>
           <span class="set-hdr">Reps<\/span>
+          <span class="set-hdr" style="text-align:center;font-size:0.6rem;">½<\/span>
+          <span class="set-hdr" style="text-align:center;font-size:0.6rem;">Asst<\/span>
           <span><\/span>
         <\/div>
         ${sets}
@@ -846,6 +929,202 @@ function renderWorkout() {
       <div class="progression-rule">↑ ${ex.progression}<\/div>
     <\/div>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PROGRESSION ENGINE (per-set recommendations)
+// ═══════════════════════════════════════════════════════════════
+
+// Determine set scheme for an exercise: 'pyramid' for compounds, 'straight' for isolation
+function getScheme(ex) {
+  const tag = (ex.tag || '').toLowerCase();
+  const name = (ex.name || '').toLowerCase();
+  const compoundKeywords = ['compound', 'strength', 'main lift', 'main hammy', 'main back'];
+  // Big barbell / dumbbell lifts: pyramid scheme
+  if (compoundKeywords.some(k => tag.includes(k))) return 'pyramid';
+  if (name.includes('squat') && !name.includes('split')) return 'pyramid';
+  if (name.includes('bench press')) return 'pyramid';
+  if (name.includes('deadlift')) return 'pyramid';
+  if (name.includes('overhead press') || name.includes('ohp')) return 'pyramid';
+  if (name.includes('barbell row')) return 'pyramid';
+  return 'straight';
+}
+
+// Classify exercise for jump size: 'iso' (1.25kg), 'upper' (2.5kg), 'lower' (5kg)
+function getExerciseCategory(ex) {
+  const tag = (ex.tag || '').toLowerCase();
+  const name = (ex.name || '').toLowerCase();
+  if (name.includes('squat') || name.includes('deadlift') || name.includes('leg press') || tag.includes('legs')) {
+    return 'lower';
+  }
+  if (getScheme(ex) === 'pyramid') return 'upper';
+  return 'iso';
+}
+
+function getJumpSize(ex) {
+  const cat = getExerciseCategory(ex);
+  if (cat === 'lower') return 5;
+  if (cat === 'upper') return 2.5;
+  return 1.25;
+}
+
+// Check if a session's sets were "clean" (no half/assisted reps)
+function isCleanSession(sets) {
+  if (!sets || !sets.length) return false;
+  return sets.every(s => !s.half && !s.assisted);
+}
+
+// Get the last N sessions for an exercise (with ranks)
+function getRecentExerciseSessions(exName, n) {
+  const history = getStorage('exercise_history', {});
+  const h = history[exName] || [];
+  return h.slice(-n);
+}
+
+// Decide working weight for THIS session based on history
+// Returns { workingWeight, message, isNewWeight }
+function decideWorkingWeight(ex) {
+  const recent = getRecentExerciseSessions(ex.name, 2);
+  if (!recent.length) {
+    return {
+      workingWeight: ex.weight || 0,
+      message: `First session — start at ${ex.weight}kg.`,
+      isNewWeight: false
+    };
+  }
+  const last = recent[recent.length - 1];
+  const lastWeight = last.maxWeight || ex.weight;
+  const lastRank = last.rank || 'D';
+  const lastClean = isCleanSession(last.sets || []);
+  const jump = getJumpSize(ex);
+  const scheme = getScheme(ex);
+
+  // Hit D last time? Drop weight
+  if (lastRank === 'D') {
+    const dropped = Math.max(jump, Math.round(lastWeight * 0.05 * 4) / 4);
+    return {
+      workingWeight: Math.max(0, lastWeight - dropped),
+      message: `Last session was D — dropping ${dropped}kg to rebuild form and confidence.`,
+      isNewWeight: true
+    };
+  }
+
+  // S last time? Check if we can bump
+  if (lastRank === 'S') {
+    if (!lastClean) {
+      return {
+        workingWeight: lastWeight,
+        message: `Last S had half/assisted reps — repeat <strong>${lastWeight}kg<\/strong> clean before bumping.`,
+        isNewWeight: false
+      };
+    }
+    if (scheme === 'pyramid') {
+      // Compounds need TWO consecutive clean S's
+      const prev = recent.length >= 2 ? recent[recent.length - 2] : null;
+      const prevWasS = prev && prev.rank === 'S' && isCleanSession(prev.sets || []) && (prev.maxWeight || 0) === lastWeight;
+      if (prevWasS) {
+        return {
+          workingWeight: lastWeight + jump,
+          message: `<strong>Two clean S's in a row — bumping to ${lastWeight + jump}kg.<\/strong> Expect fewer reps.`,
+          isNewWeight: true
+        };
+      }
+      return {
+        workingWeight: lastWeight,
+        message: `Last session was a clean S! One more like this at <strong>${lastWeight}kg<\/strong> and you add weight.`,
+        isNewWeight: false
+      };
+    }
+    // Isolation: bump immediately on clean S
+    return {
+      workingWeight: lastWeight + jump,
+      message: `<strong>Clean S last time — bumping to ${lastWeight + jump}kg.<\/strong> Expect fewer reps.`,
+      isNewWeight: true
+    };
+  }
+
+  // A, B, C — stay at same weight, push reps
+  return {
+    workingWeight: lastWeight,
+    message: `Last session: <strong>${lastWeight}kg, rank ${lastRank}<\/strong>. Push reps up today.`,
+    isNewWeight: false
+  };
+}
+
+// Build per-set instructions
+// Returns array of { weight, repTarget, label } - one per set
+function buildSetPlan(ex) {
+  const { workingWeight, message, isNewWeight } = decideWorkingWeight(ex);
+  const scheme = getScheme(ex);
+  const recent = getRecentExerciseSessions(ex.name, 1);
+  const lastSets = recent.length ? (recent[0].sets || []) : [];
+  const topRep = parseInt(ex.repRange.split('-')[1]) || ex.maxReps;
+  const botRep = parseInt(ex.repRange.split('-')[0]) || ex.minReps;
+  const plan = [];
+
+  for (let i = 0; i < ex.sets; i++) {
+    let weight, repTarget, label;
+
+    if (scheme === 'pyramid') {
+      if (i === 0) {
+        // Warmup feeder set: ~90% rounded to nearest 2.5kg
+        weight = Math.round(workingWeight * 0.9 / 2.5) * 2.5;
+        if (weight === workingWeight) weight = workingWeight - 2.5;
+        repTarget = botRep;
+        label = 'Warmup';
+      } else {
+        weight = workingWeight;
+        // Rep target: if new weight, expect bottom of range; if same weight, push last session
+        if (isNewWeight) {
+          repTarget = botRep;
+        } else if (lastSets[i] && lastSets[i].reps) {
+          repTarget = Math.min(lastSets[i].reps + 1, topRep);
+        } else {
+          repTarget = botRep;
+        }
+        label = 'Working';
+      }
+    } else {
+      // Straight sets — all working weight
+      weight = workingWeight;
+      if (isNewWeight) {
+        repTarget = botRep;
+      } else if (lastSets[i] && lastSets[i].reps) {
+        repTarget = Math.min(lastSets[i].reps + 1, topRep);
+      } else {
+        repTarget = botRep;
+      }
+      label = '';
+    }
+
+    plan.push({ weight, repTarget, label });
+  }
+
+  return { plan, message };
+}
+
+function toggleSetMod(ex, si, field, btn) {
+  if (!currentWorkoutData[ex]) currentWorkoutData[ex] = { sets: [] };
+  if (!currentWorkoutData[ex].sets[si]) currentWorkoutData[ex].sets[si] = {};
+  const current = !!currentWorkoutData[ex].sets[si][field];
+  currentWorkoutData[ex].sets[si][field] = !current;
+  btn.classList.toggle('active');
+  setStorage('workout_draft_' + currentDay, currentWorkoutData);
+  updateSessionRank();
+  // Update rank badge for this exercise
+  const exDef = WORKOUT_DAYS[currentDay].find(e => e.name === ex);
+  if (exDef) {
+    const idx = WORKOUT_DAYS[currentDay].indexOf(exDef);
+    const block = document.getElementById('ex-' + idx);
+    if (block) {
+      const headerLeft = block.querySelector('.exercise-header-left');
+      const existingBadge = headerLeft.querySelector('.rank-badge');
+      const doneCount = (currentWorkoutData[ex].sets || []).filter(s => s && s.done).length;
+      const newRank = doneCount > 0 ? calcExerciseRank(ex, currentWorkoutData[ex].sets || [], exDef.maxReps) : null;
+      if (existingBadge) existingBadge.remove();
+      if (newRank) headerLeft.insertAdjacentHTML('afterbegin', getRankBadge(newRank));
+    }
+  }
 }
 
 function toggleExercise(i) {
@@ -879,12 +1158,22 @@ function updateSet(ex, si, field, val) {
 function toggleSet(ex, si, el) {
   if (!currentWorkoutData[ex]) currentWorkoutData[ex] = { sets: [] };
   if (!currentWorkoutData[ex].sets[si]) currentWorkoutData[ex].sets[si] = {};
-  currentWorkoutData[ex].sets[si].done = !currentWorkoutData[ex].sets[si].done;
+  const wasDone = currentWorkoutData[ex].sets[si].done;
+  currentWorkoutData[ex].sets[si].done = !wasDone;
   setStorage('workout_draft_' + currentDay, currentWorkoutData);
   // toggle visual immediately
   el.classList.toggle('done');
   el.textContent = currentWorkoutData[ex].sets[si].done ? '✓' : '';
   updateSessionRank();
+  // Auto-start rest timer when newly marked done (not when unmarked)
+  if (!wasDone && currentWorkoutData[ex].sets[si].done) {
+    const exDef = WORKOUT_DAYS[currentDay].find(e => e.name === ex);
+    if (exDef) {
+      const scheme = getScheme(exDef);
+      const restSec = scheme === 'pyramid' ? 120 : 75; // 2 min for compounds, 1:15 for isolation
+      startRestTimer(restSec, exDef.name);
+    }
+  }
   // refresh badge
   const exDef = WORKOUT_DAYS[currentDay].find(e => e.name === ex);
   if (exDef) {
@@ -900,6 +1189,80 @@ function toggleSet(ex, si, el) {
         headerLeft.insertAdjacentHTML('afterbegin', getRankBadge(newRank));
       }
     }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  REST TIMER
+// ═══════════════════════════════════════════════════════════════
+let restInterval = null;
+let restRemaining = 0;
+let restAudio = null;
+
+function startRestTimer(seconds, exName) {
+  if (restInterval) clearInterval(restInterval);
+  restRemaining = seconds;
+  document.getElementById('rest-label').textContent = exName ? 'Rest before next ' + exName + ' set' : 'Recover for next set';
+  updateRestDisplay();
+  document.getElementById('rest-modal').classList.add('show');
+  restInterval = setInterval(() => {
+    restRemaining--;
+    updateRestDisplay();
+    if (restRemaining <= 0) {
+      clearInterval(restInterval);
+      restInterval = null;
+      playRestDone();
+      document.getElementById('rest-display').style.color = 'var(--green)';
+      document.getElementById('rest-label').textContent = 'Ready — go lift';
+      // Auto-close after 5s
+      setTimeout(() => {
+        if (document.getElementById('rest-modal').classList.contains('show') && restRemaining <= 0) {
+          closeRestTimer();
+        }
+      }, 5000);
+    }
+  }, 1000);
+}
+
+function updateRestDisplay() {
+  const m = Math.floor(restRemaining / 60);
+  const s = restRemaining % 60;
+  const display = document.getElementById('rest-display');
+  display.textContent = m + ':' + String(Math.max(0, s)).padStart(2, '0');
+  display.style.color = restRemaining <= 10 && restRemaining > 0 ? 'var(--yellow)' : 'var(--accent)';
+}
+
+function adjustRest(delta) {
+  restRemaining = Math.max(0, restRemaining + delta);
+  updateRestDisplay();
+}
+
+function closeRestTimer() {
+  if (restInterval) clearInterval(restInterval);
+  restInterval = null;
+  document.getElementById('rest-display').style.color = 'var(--accent)';
+  document.getElementById('rest-modal').classList.remove('show');
+}
+
+function playRestDone() {
+  // Use Web Audio API for a simple beep — no external sound file needed
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+    // Vibrate if supported
+    if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
+  } catch (e) {
+    // Silent fail
   }
 }
 
@@ -1057,7 +1420,7 @@ function savePR() {
 function renderPRs() {
   const prs = getStorage('prs', []);
   document.getElementById('pr-list').innerHTML = prs.length
-    ? prs.map(p => `<div class="pr-item"><div><div class="pr-lift">${p.lift}<\/div><div class="pr-date">${formatDate(p.date)}${p.reps ? ' · ' + p.reps + ' rep' + (p.reps > 1 ? 's' : '') : ''}<\/div><\/div><div class="pr-weight">${p.weight}kg<\/div><\/div>`).join('')
+    ? prs.map(p => `<div class="pr-item"><div><div class="pr-lift">${p.lift}<\/div><div class="pr-date">${formatShortDate(p.date)}${p.reps ? ' · ' + p.reps + ' rep' + (p.reps > 1 ? 's' : '') : ''}<\/div><\/div><div class="pr-weight">${p.weight}kg<\/div><\/div>`).join('')
     : '<div class="empty-state">No PRs logged<\/div>';
 }
 
@@ -1259,6 +1622,7 @@ function renderPelvic() {
           <div class="routine-name">${p.name}<\/div>
           <div class="routine-time">${p.time}<\/div>
           <div class="routine-desc">${p.desc}<\/div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:0.6rem;" onclick="startPelvicTimer(${i})">▶ Start ${p.sides === 2 ? 'Side 1' : ''} (${p.seconds}s)<\/button>
         <\/div>
       <\/div>`
     ).join('');
@@ -1350,6 +1714,46 @@ function toggleHeatmapDay(dKey) {
   renderPelvic();
 }
 
+let pelvicSideContext = null; // { stepIdx, side } when in middle of two-sided exercise
+
+function startPelvicTimer(stepIdx, side) {
+  const step = PELVIC_ROUTINE[stepIdx];
+  if (!step) return;
+  side = side || 1;
+  if (step.sides === 2) {
+    pelvicSideContext = { stepIdx, side };
+    const label = side === 1 ? step.name + ' — Side 1' : step.name + ' — Side 2';
+    startRestTimer(step.seconds, label);
+    // Patch the rest modal's done button to advance to side 2
+    setTimeout(() => {
+      const closeBtn = document.querySelector('#rest-modal .btn-primary');
+      if (closeBtn && side === 1) {
+        closeBtn.textContent = 'Switch to Side 2 →';
+        closeBtn.onclick = () => {
+          closeRestTimer();
+          startPelvicTimer(stepIdx, 2);
+        };
+      } else if (closeBtn) {
+        closeBtn.textContent = 'Done';
+        closeBtn.onclick = () => {
+          closeRestTimer();
+          pelvicSideContext = null;
+        };
+      }
+    }, 50);
+  } else {
+    pelvicSideContext = null;
+    startRestTimer(step.seconds, step.name);
+    setTimeout(() => {
+      const closeBtn = document.querySelector('#rest-modal .btn-primary');
+      if (closeBtn) {
+        closeBtn.textContent = 'Done';
+        closeBtn.onclick = () => closeRestTimer();
+      }
+    }, 50);
+  }
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 //  NUTRITION PAGE  —  macro rings + AI meal estimation
@@ -1425,9 +1829,44 @@ function deleteMeal(i) {
   renderMeals();
 }
 
+let mealPhotoBase64 = null; // current pending photo as base64 (no data: prefix)
+let mealPhotoMediaType = null;
+
+function handleMealPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast('Pick an image file');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const match = dataUrl.match(/^data:(image\/[a-z+]+);base64,(.+)$/);
+    if (!match) {
+      showToast('Could not read image');
+      return;
+    }
+    mealPhotoMediaType = match[1];
+    mealPhotoBase64 = match[2];
+    document.getElementById('meal-photo-img').src = dataUrl;
+    document.getElementById('meal-photo-preview').style.display = 'block';
+    showToast('Photo ready · tap Estimate');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function clearMealPhoto() {
+  mealPhotoBase64 = null;
+  mealPhotoMediaType = null;
+  document.getElementById('meal-photo-preview').style.display = 'none';
+  document.getElementById('meal-photo-img').src = '';
+}
+
 async function estimateMeal() {
   const desc = document.getElementById('meal-desc').value.trim();
-  if (!desc) return showToast('Describe a meal first');
+  if (!desc && !mealPhotoBase64) return showToast('Add a photo or description first');
   const apiKey = getStorage('apiKey', '');
   if (!apiKey) return showToast('Add your API key first');
 
@@ -1437,6 +1876,20 @@ async function estimateMeal() {
   if (estimate) estimate.style.display = 'none';
 
   try {
+    // Build message content - text or text+image
+    let content;
+    if (mealPhotoBase64) {
+      const prompt = desc
+        ? 'Estimate kcal and protein grams for this meal. The user adds context: "' + desc + '". Look at the photo and be realistic about portion size. Reply ONLY as JSON: {"name":"short name","kcal":NUM,"protein":NUM}.'
+        : 'Estimate kcal and protein grams for this meal shown in the photo. Be realistic about portion size based on visual cues. Reply ONLY as JSON: {"name":"short descriptive name","kcal":NUM,"protein":NUM}.';
+      content = [
+        { type: 'image', source: { type: 'base64', media_type: mealPhotoMediaType, data: mealPhotoBase64 } },
+        { type: 'text', text: prompt }
+      ];
+    } else {
+      content = 'Estimate kcal and protein grams for this meal. Be realistic. Reply ONLY as JSON: {"name":"short name","kcal":NUM,"protein":NUM}. Meal: ' + desc;
+    }
+
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -1447,11 +1900,8 @@ async function estimateMeal() {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
-        messages: [{
-          role: 'user',
-          content: 'Estimate kcal and protein grams for this meal. Be realistic. Reply ONLY as JSON: {"name":"short name","kcal":NUM,"protein":NUM}. Meal: ' + desc
-        }]
+        max_tokens: 400,
+        messages: [{ role: 'user', content }]
       })
     });
     if (!r.ok) {
@@ -1459,10 +1909,12 @@ async function estimateMeal() {
       throw new Error('API ' + r.status + ': ' + errText.slice(0, 100));
     }
     const data = await r.json();
-    const text = data.content[0].text.replace(/```json|```/g, '').trim();
-    const est = JSON.parse(text);
+    const text = data.content.map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
+    // Find JSON in case there's any preamble
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const est = JSON.parse(jsonMatch ? jsonMatch[0] : text);
 
-    document.getElementById('meal-name-input').value = est.name || desc.slice(0, 40);
+    document.getElementById('meal-name-input').value = est.name || desc.slice(0, 40) || 'Photo meal';
     document.getElementById('meal-kcal').value = Math.round(est.kcal);
     document.getElementById('meal-protein').value = Math.round(est.protein);
     if (estimate) estimate.style.display = 'block';
@@ -1504,6 +1956,7 @@ function logMeal() {
   if (proteinInput) proteinInput.value = '';
   const estimate = document.getElementById('meal-estimate');
   if (estimate) estimate.style.display = 'none';
+  clearMealPhoto();
 
   updateMacroRings();
   renderMeals();
@@ -1594,6 +2047,9 @@ function renderProgress() {
 
   // ── Exercise rankings ──
   renderRankings();
+
+  // ── Muscle volume ──
+  renderMuscleVolume();
 
   // ── Session history ──
   renderSessionHistory(sessions);
@@ -1748,6 +2204,73 @@ function setNutritionRange(n) {
     b.classList.toggle('active', parseInt(b.dataset.range) === n);
   });
   renderNutritionCharts();
+}
+
+function renderMuscleVolume() {
+  const el = document.getElementById('muscle-volume-list');
+  if (!el) return;
+  const sessions = getStorage('workout_sessions', []);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+  const recent = sessions.filter(s => s.date >= cutoffStr);
+  if (!recent.length) {
+    el.innerHTML = '<div class="empty-state">No sessions in the last 7 days<\/div>';
+    return;
+  }
+  // Count working sets per muscle: primary +1, secondary +0.5
+  const muscleSets = {};
+  MUSCLES.forEach(m => muscleSets[m] = 0);
+  recent.forEach(s => {
+    (s.exercises || []).forEach(exEntry => {
+      const exDef = Object.values(WORKOUT_DAYS).flat().find(e => e.name === exEntry.name);
+      if (!exDef) return;
+      const numSets = exEntry.sets || 0;
+      (exDef.primary || []).forEach(m => {
+        if (muscleSets[m] === undefined) muscleSets[m] = 0;
+        muscleSets[m] += numSets;
+      });
+      (exDef.secondary || []).forEach(m => {
+        if (muscleSets[m] === undefined) muscleSets[m] = 0;
+        muscleSets[m] += numSets * 0.5;
+      });
+    });
+  });
+  // Sort by sets desc
+  const sorted = Object.entries(muscleSets)
+    .filter(([m, s]) => s > 0)
+    .sort((a, b) => b[1] - a[1]);
+  if (!sorted.length) {
+    el.innerHTML = '<div class="empty-state">No volume tracked yet<\/div>';
+    return;
+  }
+  const maxSets = sorted[0][1];
+  // Recommended weekly sets per muscle for hypertrophy (rough guide)
+  const targets = {
+    'Chest': 12, 'Lats': 12, 'Upper Back': 12, 'Quads': 12, 'Hamstrings': 8, 'Glutes': 10,
+    'Front Delts': 6, 'Side Delts': 10, 'Rear Delts': 8, 'Biceps': 10, 'Triceps': 10,
+    'Calves': 8, 'Abs': 8, 'Traps': 6, 'Lower Back': 6, 'Forearms': 4
+  };
+  el.innerHTML = sorted.map(([m, s]) => {
+    const target = targets[m] || 8;
+    const ratio = Math.min(s / target, 1.5);
+    const status = s >= target ? '✓' : (s >= target * 0.7 ? '◐' : '○');
+    const statusColor = s >= target ? 'var(--green)' : (s >= target * 0.7 ? 'var(--yellow)' : 'var(--muted)');
+    const barColor = s >= target ? 'var(--green)' : 'var(--accent2)';
+    const barW = Math.min(100, (s / target) * 100);
+    return `<div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <span style="color:${statusColor};font-size:1.1rem;width:18px;text-align:center;">${status}<\/span>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.25rem;">
+          <span style="font-size:0.83rem;font-weight:500;">${m}<\/span>
+          <span style="font-size:0.72rem;color:var(--muted);">${s % 1 === 0 ? s : s.toFixed(1)} / ${target} sets<\/span>
+        <\/div>
+        <div style="height:4px;background:var(--surface);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${barW}%;background:${barColor};border-radius:2px;"><\/div>
+        <\/div>
+      <\/div>
+    <\/div>`;
+  }).join('');
 }
 
 function renderRankings() {
